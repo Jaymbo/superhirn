@@ -1,15 +1,17 @@
 package superhirn;
 
-import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.IntStream;
 
 public class main {
-	public static boolean naiv = true; // true ist Naiv 		false ist advanced
+	public static boolean naiv = false; 			// true ist Naiv 				false ist advanced
+	public static boolean einzelmodus = false;	// true ist Einzelmodus 		false ist Analyse
+	public static boolean kommentare = false; 	// true mit kommentare 			false ohne kommentare	
 	public static long start = System.currentTimeMillis(); 
 	public static int color = 6;
 	public static int len = 4;
-	public static int reihen = 20;
+	public static int reihen = 10;
 	public static boolean komb [] = new boolean [(int)Math.pow(color, len)];
 	public enum colors {
 		Rot,Gelb,Grün,Hellblau,Dunkelblau,Orange;
@@ -22,29 +24,55 @@ public class main {
 	public static int [][] gesteckt = new int [reihen][len];
 	public static int steckerkom = len + 1;
 	public static int [] hochs = new int[len];
-	//public static stecker [][][] einzelw = new stecker [komb.length][komb.length][len];
+	public static int [] min = new int [steckerkom];
 	
 	
 	public static void main(String[] args) {
-		int [] sort = new int [reihen];
-		for (int i = 0; i < komb.length; i++) {
-			reihe = 0;
-			komb = new boolean [(int)Math.pow(color, len)];
-			gesteckt = new int [reihen][len];
-			bewertung = new stecker [reihen][len];
-			sort[main2(i)]++;
+		for (int i = 0; i < len; i++) {
+			hochs[i] = (int)Math.pow(color, i);
 		}
-		print(sort);
-		naiv = false;
-		sort = new int [reihen];
-		for (int i = 0; i < komb.length; i++) {
-			reihe = 0;
-			komb = new boolean [(int)Math.pow(color, len)];
-			gesteckt = new int [reihen][len];
-			bewertung = new stecker [reihen][len];
-			sort[main2(i)]++;
+		if(einzelmodus) {
+			for (int j = 0; j <= len; j++) {
+				steckerkom += j;
+			}
+			min = new int [steckerkom];
+			Random random = ThreadLocalRandom.current();
+			int zuer = random.nextInt(komb.length);
+			main2(69);
+		}else {
+			for (int j = 0; j <= len; j++) {
+				steckerkom += j;
+			}
+			naiv = true;
+			int [] sort = new int [reihen];
+			for (int i = 0; i < komb.length; i++) {
+				reihe = 0;
+				komb = new boolean [(int)Math.pow(color, len)];
+				gesteckt = new int [reihen][len];
+				bewertung = new stecker [reihen][len];
+				sort[main2(i)]++;
+			}
+			print(sort);
+			naiv = false;
+			sort = new int [reihen];
+			for (int i = 0; i < komb.length; i++) {
+				reihe = 0;
+				gesteckt = new int [reihen][len];
+				bewertung = new stecker [reihen][len];
+				min = new int [steckerkom];
+				int temp = main2(i);
+				sort[temp]++;
+				if (temp == 6) {
+					int[] extr = extrahieren(i);
+					for (int j = 0; j < extr.length; j++) {
+						System.out.print(colortransformen(extr[j]) + " ");
+					}
+					System.out.println();
+				}
+			}
+			System.out.println("Braucht " + (System.currentTimeMillis() - start) + " ms.");
+			print(sort);
 		}
-		print(sort);
 	}
 	
 	
@@ -57,14 +85,6 @@ public class main {
 				bewertung[i][j] = stecker.non;
 			}
 		}
-		for (int j = 0; j <= len; j++) {
-			steckerkom += j;
-		}
-		for (int i = 0; i < len; i++) {
-			hochs[i] = (int)Math.pow(color, i);
-		}
-		Random random = ThreadLocalRandom.current();
-		//int zuer = random.nextInt(komb.length);
 		int best = naiv();
 		while (reihe < reihen) {
 			bewertung[reihe] = einzelnbewerten(extrahieren(zuer),extrahieren(best));
@@ -78,22 +98,22 @@ public class main {
 				best = temp;
 			}
 		}
-		return reihe;
-		/*
-		for (int i = 0; i < reihe; i++) {
-			for (int j = 0; j < len; j++) {
-				System.out.print(colortransformen(gesteckt[i][j]) + " ");
-			}
-			System.out.print("     ");
-			for (int j = 0; j < len; j++) {
-				System.out.print(bewertung[i][j] + " ");
+		if (einzelmodus) {
+			for (int i = 0; i < reihe; i++) {
+				for (int j = 0; j < len; j++) {
+					System.out.print(colortransformen(gesteckt[i][j]) + " ");
+				}
+				System.out.print("     ");
+				for (int j = 0; j < len; j++) {
+					System.out.print(bewertung[i][j] + " ");
+				}
+				System.out.println();
 			}
 			System.out.println();
+			System.out.println("Hat " + reihe + " Reihen gebraucht. Hat die Kombination " + zuer + " erraten.");
+			System.out.println("Braucht "+ (System.currentTimeMillis() - start) + " ms.");
 		}
-		System.out.println();
-		System.out.println("Hat "+reihe+" Reihen gebraucht. " + zuer);
-		System.out.println(System.currentTimeMillis() - start);
-		*/
+		return reihe;
 	}
 	
 	
@@ -220,71 +240,76 @@ public class main {
 	}
 	
 	
-	public static int maximaleabweichung(int [] verteilung) {
-		int min = komb.length;
-		int max = 0;
-		for (int i = 0; i < verteilung.length; i++) {
-			if (verteilung[i] != 0) {
-				if (min > verteilung[i]) {
-					min = verteilung[i];
-				}
-				if (max < verteilung[i]) {
-					max = verteilung[i];
-				}
-			}
-		}
-		return max;// - min;
+	public static int [] maximaleabweichung(int [] verteilung) {
+		for (int i : IntStream.range(0, verteilung.length).toArray()) {
+	    	int swap = i;
+	    	for (int e = i; e < verteilung.length;e++) {
+	    		if (verteilung[swap] > verteilung[e]) {
+	    			swap = e;
+	    		}
+	    	}
+	    	int temp = verteilung[i]; 
+	    	verteilung[i] = verteilung[swap]; 
+	    	verteilung[swap] = temp;
+	    }
+		return verteilung;
 	}
 	
 	
 	public static int gesamtverteilung() {
-		int min = komb.length;
+		for (int i = 0; i < min.length; i++) {
+			min[i] = komb.length;
+		}
 		int mine = 0;
 		for (int i = 0; i < komb.length; i++) {
-			if (komb[i]) {
-				int temp =  maximaleabweichung(verteilung(i));
-				if (min > temp) {
-					min = temp;
-					mine = i;
-				}
+			if (komb[i] && mindeste(maximaleabweichung(verteilung(i)))) {
+				mine = i;
 			}
 		}
-		/*
-		for (int i = 0; i < komb.length; i++) {
-			int temp =  maximaleabweichung(verteilung(i));
-			if (komb[i] && temp == min) {
-				for (int j = 0; j < len; j++) {
-					System.out.print(colortransformen(extrahieren(i)[j]) + " ");
+		if (kommentare) {
+			System.out.println("Die Besten Kombinationen:");
+			System.out.println();
+			for (int i = 0; i < komb.length; i++) {
+				boolean temp =  mindeste(verteilung(i));
+				if (komb[i] && temp) {
+					for (int j = 0; j < len; j++) {
+						System.out.print(colortransformen(extrahieren(i)[j]) + " ");
+					}
+					System.out.println();
 				}
-				System.out.println();
 			}
+			System.out.println("Ausgewählte beste Kombination ");
+			print(min);
+			System.out.println("Verteilung der bestenKombination ");
+			print(verteilung(mine));
 		}
-		*/
-		//System.out.println(min);
-		//print(verteilung(mine));
+		//print(maximaleabweichung(verteilung(mine)));
 		return mine;
 	}
 	
+	
 	public static int naiv() {
 		if(naiv) {
-		for (int i = 0; i < komb.length; i++) {
-			if (komb[i]) {
-				return i;
+			for (int i = 0; i < komb.length; i++) {
+				if (komb[i]) {
+					return i;
+				}
 			}
-		}
-		return 0;
+			return 0;
 		}else {
 			return gesamtverteilung();
 		}
 	}
 	
-	public static int [] aufteilung(int i) {
-		int bewe [] = new int [komb.length];
-		for (int j = 0; j < komb.length; j++) {
-			bewe[j]=bewertunginint(einzelnbewerten(extrahieren(i),extrahieren(j)));
+	public static boolean mindeste(int[] k) {
+		for (int i = k.length-1; i>=0; i--) {
+			if (min[i] < k[i]) {
+				return false;
+			}else if(min[i] > k[i]) {
+				min = k;
+				return true;
+			}
 		}
-		return bewe;
+		return true;
 	}
-	
-
 }
